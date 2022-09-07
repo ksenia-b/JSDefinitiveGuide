@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>JS Loan calculator</title>
+        <style>
+            .output{
+                font-weight: bold;
+            }
+            #payment{
+                text-decoration: underline;
+            }
+            #graph{
+                border: solid black 1px;
+            }
+            th, td {
+                vertical-align: top;
+            }
+        </style>
+    </head>
+    <body>
+        <table>
+        <tr>
+            <th>Enter Loan:</th>
+            <td></td>
+            <th>Loan Balance, Cumulative Equity, and Interest Payment</th>
+        </tr>
+        <tr>
+            <td>Amount of the loan ($):</td>
+            <td><input id="amount" onchange="calculate();"/></td>
+            <td rowspan=8>
+                <canvas id="graph" width="400" height="250"></canvas>
+            </td>
+        </tr>
+        <tr>
+            <td>Annual Interest (%):</td>
+            <td><input id="apr" onchange="calculate()"/></td>
+        </tr>
+        <tr></tr>
+        </table>
+    </body>
+</html>
