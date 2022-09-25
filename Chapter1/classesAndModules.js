@@ -569,7 +569,26 @@ function defineSubclass(superclass, // constructor of the Superclass
     if(statics) extend(constructor, statics);
     // return the class
     return constructor;
-                        }
+}
+
+// --- Constructor and Method Chaining:
+// Example_____________________:
+function NonNullSet(){
+    Set.apply(this, arguments);
+}
+
+NonNullSet.prototype = inherit(Set.prototype);
+NonNullSet.prototype.constructor = NonNullSet;
+
+// To exclude null and undefined, we only have to override the add() method
+NonNullSet.prototype.add = function(){
+    for(let i = 0; i < arguments.length; i++)
+    if(arguments[i] == null)
+        throw new Error("Can't add null or undefined to a nonNullSet");
+
+        // Chain to the sperclass to perform the actual insertion
+        return Set.prototype.add.apply(this, arguments);
+}
     
                         
                     
