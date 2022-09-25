@@ -243,3 +243,333 @@ function quacks(o, /*, ...*/){
 return true;
 }
 
+
+// ______________________________________Example:  Set.js: an arbitrary set of values
+function Set(){
+    this.values = {};
+    this.n = 0;
+    this.add.apply(this, arguments); // all arguments are values to add
+}
+
+// Add each of the arguments to the set
+Set.prototype.add = function(){
+    for(let i = 0; i < arguments.length; i++){ // For each argument
+        let val = arguments[i]; // the value to ddd to the set
+        let str = Set._v2s(val); // transform it to a string
+        if(!this.values.hasOwnProperty(str)){ // if not already in the set
+            this.values[str] = val; // map string to value
+            this.n++; // increase set size
+        }
+    }
+    return this; // support chained method calls.
+
+};
+// remove each of the argments from the set
+Set.prototype.remove = function(){
+    for(let i = 0; i < arguments.length; i++){
+        let str = Set._v2s(val);
+        if(this.values.hasOwnProperty(str)){
+            delete this.values[str];
+            this.n--;
+        }
+    }
+    return this;
+    };
+
+// return true if set contains value, false otherwise;
+Set.prototype.contains = function(value){
+    return this.values.hasOwnProperty(Set._v2s(value));
+};
+
+// return the size of the set
+Set.prototype.size = function(value){
+    return this.n;
+};
+
+// Call function f on the specified context for each element of the set.
+Set.prototype.forEach = function(f, context){
+    for(let s in this.values)
+        if(this.values.hasOwnProperty(s))
+            f.call(context, this.values[s]);
+};
+
+Set._v2s = function(val){
+    switch(val){
+        case undefined: return 'u'; // Special primitive
+        case null: return 'n'; // values get single-letter
+        case true: return 't'; // codes.
+        case false: return 'f';
+        default: switch(typeof val){
+            case 'number': return '#' + val;
+            case 'string': return '"' + val;
+            default: return '@' + objectId(val);
+        }
+    }
+    function objectId(o){
+        let prop = "|**objectId**|";
+        if(!o.hasOwnProperty(prop))
+            o[prop] = Set._v2s.next++;
+        return o[prop];
+    }
+}
+
+Set._v2s.next = 100; // Start assinging object ids at this value;
+
+oks1 = new Set();
+oks1.add("mark");
+oks1.add("natali");
+// oks1.values
+// {"dfss: 'dfss', "natali: 'natali', "mark: 'mark'}
+
+
+// Example: Enumerated types in js
+function enumeration(namesToValues){
+    let enumeration = function(){
+        throw "Can't Instantiate Enumerations";
+    };
+    let proto = enumeration.prototype = {
+        constructor: enumeration,
+        toString: function(){
+            return this.name;
+        },
+        valueOf: function(){
+            return this.value;
+        },
+        toJSON: function(){
+            return this.name;
+        }
+    };
+
+enumeration.values = []; // array of the enumerated value objects
+
+for(let name in namesToValues){
+    let e = inherit(proto);
+    e.name = name;
+    e.value = namesToValues[name];
+    enumeration[name] = e;
+    enumeration.values.push(e);
+}
+
+enumeration.foreach = function(f, c){
+    for(let i = 0; i < this.values.length; i++) f.call(c, this.values[i]);
+};
+return enumeration;
+}
+
+// _______________________ Example:
+// The 'hello word' of enumerated types is to use an enumerated type to represent the suits in a deck
+// of card. Example uses enumeration() function in this way and also defines classes to representcards and decks of cards.
+// Representing cards with enumerated types:
+function Card(suits, rank){
+    this.suits = suits;
+    this.rank = rank;
+}
+
+Card.Suit = enumeration({
+    Club: 1, Diamonds: 2, Heards: 3, Spades: 4
+});
+Card.Rank = enumeration({Two: 2, Three: 3, Four: 4, Five: 5,
+Six: 6, Seven: 7, Eight: 8, Nine: 9, Ten: 10, Jack: 11, Queen: 12, King: 13, Ace: 14});
+
+Card.prototype.toString = function(){
+    return this.rank.toString() + " of " + this.suit.toString();
+};
+
+Card.prototype.compareTo = function(that){
+    if(this.rank < that.rank) return -1;
+    if(this.rank < that.rank) return 1;
+    return 0;
+};
+
+// the function for ordering cards as you would in poker
+Card.orderByRank = function(a, b){
+    return a.compareTo(b);
+}
+
+// a function for ordering cards as you would in bridge
+Card.orderBySuit = function(a, b){
+    if(a.suit < b.suit) return -1;
+    if(a.suit > b.suit) return 1;
+    if(a.rank < b.rank) return -1;
+    if(a.rank > b.rank) return 1;
+    return 0;
+}
+
+// Define class to represent a standart deck of cards:
+function Deck(){
+    let cards = this.cards = [];
+    Card.Suit.foreach(function(s){
+        Card.Rank.foreach(function(r){
+            cards.push(new Card(s, r));
+        });
+    });
+}
+
+// Shuffle method: shuffles cards in place and returns the deck
+Deck.prototype.shufle = function(){
+    let deck = this.cards, len = deck.length;
+    for(let i = len - 1; i > 0; i--){
+        let r = Math.floor(Math.random() * (i + 1)), temp; // random number
+        temp = deck[i], deck[i] = deck[r], deck[r] = temp;
+    }
+    return this;
+};
+
+// Deal method: returns an arrray of cards
+Deck.prototype.deal = function(n){
+    if(this.cards.length < n) throw "Out of cards";
+    return this.cards.splice(this.cards.length - n, n);
+};
+
+// Create a new dekc of cards, shuffle it and deal a bridge hand
+let deck = (new Deck()).shufle();
+let hand = deck.deal(13).sort(Card.orderBySuit);
+
+let oksDeck = new Deck();
+
+
+// -- Standart Conversion Methods:
+// __________________ Example, note that here we use extend() function
+
+// Add these methods to the Set prototype object.
+extend(Set.prototype, {
+    toString: function(){
+        let s = "{", i = 0;
+        this.foreach(function(v){
+            s += ((i++ > 0)?", ":"") + v;
+        });
+        return s + "}";
+    },
+    toLocaleString: function(){
+        let s = "{", i = 0;
+        this.foreach(function(v){
+            if(i++ > 0) s += v; // null 7 undefined
+            else s += v.toLocaleString(); // all others;
+        });
+        return s + "}";
+    },
+    // Convert s set to an array of values
+    toArray: function(){
+        let a = [];
+        this.foreach(function(v){
+            a.push(v);
+        });
+        return a;
+    }
+});
+
+// Treat sets like arrays for the purpose of JSON stringification.
+Set.prototype.toJSON = Set.prototype.toArray;
+
+
+// --- Comparison Methods:
+// _____________________Examaple :
+// The Range class overwrote its constructor property. So add it now.
+Range.prototype.constructor = Range;
+
+// A Range is not equal to any nonrange.
+// Two ranges are equal if and only if their endpoings are equial.
+Range.prototype.equals = function(that){
+    if(that == null) return false;
+    if(that.constructor !== Range) return false;
+    // Now return true if and only if the two endpoints are equal.
+    return this.from == that.from && this.to == that.to;
+}
+// We cannot  just compare the values property of two sets, but must perform a deeper comparison:
+Set.prototype.equals = function(that){
+    if(this === that) return true;
+    
+    // Note that instanceof property rejects null and undefined
+    if(!(that instanceof Set)) return false;
+    if(this.size() != that.size()) return false;
+
+    // Now check whether every element in this is also in that.
+    try{
+        this.foreach(function(v){
+            if(!that.contains(v)) throw false;
+        });
+        return true;
+    }
+    catch(x){
+        if(x === false) return false;
+        throw x;
+    }
+}
+
+// --- Borrowing methods: 'borrowing' = informal term.
+// There is nothing spetial about methods in js: they are simply functions as signed to object 
+// properties and invoked "through" of "on" and object.
+// !! It is only the array methods that can be borrowed.
+
+// Example: Generic methods for borrowing:
+let generic = {
+    toString: function(){
+        let s = '[';
+        if(this.constructor && this.constructor.name)
+        s += this.constructor.name + ": ";
+
+        // Now enumerate all noninherited, nonfunction properties
+        let n = 0;
+        for(let name in this){
+            if(!this.hasOwnProperty(name)) continue; // skip inherited props
+            let value = this[name];
+            if(typeof value === "function") continue; // skip methods
+            if(n++) s+= ", ";
+            s += name + "=" + value;
+        }
+        return s + ']';
+    },
+
+    equals: function(that){
+        if(that == null) return false;
+        if(this.constructor !== that.constructor) return false;
+        for(let name in this){
+            if(name === "|**objectid**|") continue; // skip special prop.
+            if(!this.hasOwnProperty(name)) continue; // skop inherited
+            if(this[name] !== that[name]) return false; // compare values
+        }
+        return true;
+    }
+};
+
+
+// -- Constructor overloading and factory methods:
+// Sometimes we want to allow objects to be initialized in more that one way.
+// here is an overloaded version of the Set constructor, for example:
+
+// One way to to this is to OVERLOAD the constructor and have it perform different kinds
+// of initialization depending on the arguments it is passed.
+// ___________________________________Example:
+function Set(){
+    this.values = {};
+    this.n = 0;
+
+    if(arguments.length == 1 && isArrayLike(arguments[0]))
+        this.add.apply(this, arguments[0]);
+        else if(arguments.length > 0)
+        this.add.apply(this, arguments);
+}
+
+// and here is a factory method for initializing a Set form an array:
+Set.fromArray = function(a){
+    s = new Set();
+    s.add.apply(s, a);
+    return s;
+}
+
+// --- Defining subclass
+// Example: Subclass definition utilities
+function defineSubclass(superclass, // constructor of the Superclass
+                        constructor, // The constructor for the new subclass
+                        methods, // Instance methds: copied to prototype
+                        statics){ // class properties: copied to constructor
+    constructor.prototype = inherit(superclass.prototype);
+    constructor.prototype.constructor = constructor;
+    if(methods) extend(constructor.prototype, methods);
+    if(statics) extend(constructor, statics);
+    // return the class
+    return constructor;
+                        }
+    
+                        
+                    
