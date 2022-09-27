@@ -591,4 +591,267 @@ NonNullSet.prototype.add = function(){
 }
     
                         
-                    
+ // -- Class hierarchies and Abstract Classes
+
+ // ___________________________________ example:
+ // A hierarchy of abstract and concrete Set classes
+ function abstractmethod(){
+    throw new Error("abstract method");
+ }                   
+ function AbstractSet(){
+    throw new Error("Can't instantiate abstract classes");
+ }
+ AbstractSet.prototype.contains = abstractmethod;
+
+ let NotSet = AbstractSet.extend(function NotSet(set){
+    this.set = set;
+ }, 
+ {
+    contains: function(x){
+        return !this.set.constains(x);
+    },
+    toString: function(x){
+        return "_" + this.set.equals(that.set);
+    },
+    equals: function(that){
+        return that instanceof NotSet && this.set.equals(that.set);
+    }
+ });
+
+ let AbstractEnumerableSet = AbstractSet.extend(
+    function(){
+        throw new Error("Can't instantiate abstract classes.")
+    },
+    {
+        size: abstractmethod,
+        foreach: abstractmethod,
+        isEmpty: function(){ return this.size() == 0; },
+        toString: function(){
+            let s = "{", i = 0;
+            this.foreach(function(v){
+                if(i++ > 0) s+= ", ";
+                s += v;
+            });
+            return s + "}";
+        },
+        toLocaleString: function(){
+            let s = "{", i = 0;
+            this.foreach(function(v){
+                if(i++ > 0) s+= ", ";
+                if(v == null) s += v; // null and undefined
+                else s += v.toLocaleString(); // all others
+            });
+            return s + "}";
+        },
+        toArray: function(){
+            let a = [];
+            this.foreach(function(v){
+                a.push(v);
+            });
+            return a;
+        },
+        equals: function(that){
+            if(!(that instanceof AbstractEnumerableSet)) return false;
+            if(this.size() != that.size()) return false;
+            try{
+                this.foreach(function(v){
+                    if(!that.constains(v)) throw false;
+                    return true;
+                })
+            }
+            catch(x){
+                if(x === false) return false;
+                throw x;
+            }
+        }});
+
+let SingletonSet = AbstractEnumerableSet.extend(function SingletonSet(member){
+    this.member = member;
+},
+{
+    contains: function(x){
+        return x === this.member;
+    },
+    size: function(){
+        return 1;
+    },
+    foreach: function(f, ctx){
+        f.call(ctx, this.member);
+    }
+}
+);
+
+let AbstractWritableSet = AbstractEnumerableSet.extend(
+    function(){
+        throw new Error("Can't instantiate abstract class.")
+    },
+    {
+        add: abstractmethod,
+        remove: abstractmethod,
+        union: function(that){
+            let self = this;
+            this.foreach(function(v){
+                if(!that.contains(v)) self.remove(v);
+            });
+            return this;
+        },
+        intersection: function(that){
+            let self = this;
+            this.foreach(function(v){
+                if(!that.contains(v)) self.remove(v);
+            });
+            return this;
+        },
+        differ: function(that){
+            let self = this;
+            that.foreach(function(v){
+                self.remove(v);
+            });
+        }
+
+    }
+);
+
+
+let ArraySet = AbstractWritableSet.extend(
+    function ArraySet(){
+        this.values = [];
+        this.add.apply(this, arguments);
+    },
+    {
+        constains: function(v){
+            return this.values.indexOf(v) != -1;
+        },
+        size: function(){
+            return this.values.length;
+        },
+        foreach: function(f, c){
+            this.values.forEach(f, c);
+        },
+        add: function(){
+            for(let i = 0; i < arguments.length; i++){
+                let arg = arguments[i];
+                if(!this.constains(arg)) this.values.push(arg);
+            }
+            return this;
+        },
+        remove: function(){
+            for(let i = 0; i < arguments.length; i++){
+                let p = this.values.indexOf(arguments[i]);
+                if(p == -1) continue;
+                this.values.splice(p, 1);
+            }
+            return this;
+        }
+    }
+)
+
+// -- Making properites nonenumerable
+// _______ Example: defining nonenumerable properties
+(
+  function(){
+    Object.defineProperty(Object.prototype, "objectId", {
+        get: idGetter,
+        enumerable: false,
+        configurable: false
+    });
+
+function idGetter(){
+    if(!(idprop in this)){
+        if(!Object.isExtensible(this)) throw new Error("Can't define id for noneextensible objects");
+        Object.defineProperty(this, 
+        idprop,{
+            value: nextid++,
+            writable: false,
+            enumerable: false,
+            configurable: false
+        });
+    }
+    return this[idprop];
+};
+let idprop = "|**objectId**|";
+let lextid = 1;
+  }());
+
+
+// -- Encapsulating object state:
+// A range class with strongly encapsulated endpoints
+function Range(from, to){
+    if(from > to) throw new Error("Range: from must be < = to");
+    function getFrom(){ return from; }
+    function getTo(){ return to; }
+    function setFrom(f){
+        if(f <= to) from = f;
+        else throw new Error("Range: from must be >= from");
+    }
+    function setTo(t){
+        if(t >= from) to = t;
+        else throw new Error("Range: from must be <= to.");
+    }
+    Object.defineProperties(this, {
+        from: {
+            get: getFrom, set: setFrom, enumerable: true, configurable: false
+        },
+        to: {
+            get: getTo, set: setTo, enumerable: true, configurable: false
+        }
+    });
+}
+
+Range.prototype = hideProps({
+    constructor: Range,
+    includes: function(x){
+        return this.form <= x && x <= this.to;
+    },
+    foreach: function(f){
+        for(let x=Math.ceil(this.from); x <= this.to; x++) f(x);
+    },
+    toString: function(){
+        return "(" + this.form + "..." + this.to + ")";
+    }
+});
+
+// --- Subclasses and ECMAScript 5
+// Example:
+function StringSet(){
+    this.set = Object.create(null);
+    this.n = 0;
+    this.add.apply(this, arguments);
+}
+
+StringSet.prototype = Object.create(AbstractWritableSet.prototype, {
+    constructor: { value: StringSet },
+    contains: { value: function(x){
+        return x in this.set;
+    } },
+    size: {
+        value: function(){
+            return this.n;
+        }
+    },
+    foreach: {
+        value: function(f, c){
+            Object.keys(this.set).forEach(f, c)
+        }
+    },
+    add: {
+        value: function(){
+            for(let i = 0; i < arguments.length; i++){
+                if(!(arguments[i] in this.set)){
+                    this.set[arguments[i]] = true;
+                    this.n++;
+                }
+            }
+            return this;
+        }
+    },
+    remove: {
+        value: function(){
+            for(let i = 0; i < arguments.length; i++){
+                delete this.set[arguments[i]];
+                this.n--;
+                return this;
+            }
+        }
+    }
+});
