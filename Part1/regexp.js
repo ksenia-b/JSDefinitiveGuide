@@ -70,3 +70,13 @@
 // g = perform a global mathc - that is, find all matches rather than stopping afrer the first match.
 // m = multiline mode. ^ matches beginning of line or beginning of string, and $ matches end of line or end of string.
 
+
+// Example:
+let text = "dasf javascript 'fadsf' df as $1 .";
+text.replace(/javascript/gi, "JavaScript"); // no matter how it is capitalized, replace it with correct capitalization
+
+
+// Example:
+// Replace the straight quotation marks with curly quotes, leaving the quoted text (stored in $1) unchanged.
+let quote = /"([^"]*)"/g;
+text.replace(quote, '"$1');
