@@ -68,3 +68,32 @@ for(let p in o) console.log(p);
 for each(let v in o) console.log(v); // ? does it still exists????
 
 
+// Example:
+// Return iterable object that represents an inclusive range of numbers:
+function range(min, max){
+    return {
+        get min(){
+            return min;
+        },
+        get max(){
+            return max;
+        }, 
+        includes: function(x){
+            return min <= x && x <= max;
+        },
+         toString: function(){
+            return "[" + min + "," + max + "]";
+         },
+         __iterator__: function(){
+            let val = Math.ceil(min);
+            return {
+                next: function(){
+                    if(val > max)
+                    throw StopIteration;
+                    return val++;
+                }
+            }
+         }
+    } };
+    // Here is how we can iterate over range:
+    for(let i in range(1, 10)) console.log(i); // prints numbers from 1 to 10
