@@ -97,3 +97,91 @@ function range(min, max){
     } };
     // Here is how we can iterate over range:
     for(let i in range(1, 10)) console.log(i); // prints numbers from 1 to 10
+
+
+// -- Generators:
+// Generators are  js feature that borrowed from Python. It use the -yield- keyword, which mean
+// that code that uses them must explicitly opt in to ver..... The -yield- keyword is used in a function
+// and functions something like -return-
+
+// Generators are something called "generator iterator" to clearly distinguish them from the generator
+// functions by which they are created. 
+
+// Example:
+// Generator functions need never return:
+function fibonacci(){
+    let x = 0, y = 1;
+    while(true){
+        yield y;
+        [x, y] = [y, x + y];
+    }
+}
+// invoke the generator function to obtain generator:
+f = fibonacci();
+
+// Use the generator as an iterator, printing the first 10 Fibonacci numbers.
+for(let i = 0; i < 10; i++) console.log(f.next());
+
+
+// Example: a pipeline of generators:
+function eachline(s){
+    let p;
+    while((p = s.indexOf('\n')) != -1){
+        yield s.substring(0, p);
+        s = s.substring( p + 1);
+    }
+    if(s.length > 0) yield s;
+}
+
+function map(i, f){
+    for(let x in i ) yield f(x);
+}
+
+function select(i, f){
+    for(let x in i){
+        if(f(x)) yield x;
+    }
+}
+
+// Start with a string of text to process:
+let text = " #comment \n \n hello \n world \n quit \n unreached \n";
+let lines = eachline(text);
+let trimmed = map(lines, function(line){
+    return line.trim();
+});
+// finally ignore blank lines and comments
+let nonblank = select(trimmed, function(line){
+    return line.length > 0 && line[0] != "#";
+})
+
+for(let line in nonblank){
+    if(line === "quit") break;
+    console.log(line);
+}
+
+
+// -- Array comprehension:
+let evensquares = [];
+for(x in range(0, 10)){
+    if(x % 2 === 0)
+    evensquares.push(x*x);
+}
+
+// Example:
+data = [2, 3, 4, -5];
+squares = [x *x for each (x in data)] //?? for each?
+
+
+// -- Shorthand functions
+let succ = function(x) x+1, yes = function() true, no = function() false; // does not work????
+
+// -- Multiple catch clauses:
+try{
+    throw 1;
+}
+catch(e if e instanceof ReferenceError){
+    // handle reference error here
+}
+catch(e if e == "quit"){
+    // handle the thrown string "quit"
+} // ???? doesn't work?
