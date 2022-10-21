@@ -1,0 +1,25 @@
+<form>
+    <fieldset id="fields"></fieldset>
+    <div style="text-align:center">
+        <button onclick="okay()">Okay</button>
+        <button onclick="cancel()">Cancel</button>
+    </div>
+    <script>
+        let args = ["Argument1", "Argument2", "Argument3"]; //dialogArguments;
+        let text = "<legend>" + args[0] + "</legend>";
+            for(let i = 1; i < args.length; i++)
+                text += "<label>" + args[i] + ": <input id='f" + i + "'></label><br>";
+                
+            document.getElementById("fields").innerHTML = text;
+            function cancel(){
+                window.close();
+            }
+            function okay(){
+                window.returnValue = [];
+                for(let i = 1; i < args.length; i++){
+                    window.returnValue[i - 1] = document.getElementById("f" + i).value;
+                    window.close();
+                }
+            }
+    </script>
+</form>
