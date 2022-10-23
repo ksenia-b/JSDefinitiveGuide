@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>I'm thinking of a number...</title>
+        <script>
+            window.onload = newgame;
+            window.onpopstate = popState;
+            let state, ui;
+            function newgame(playagain){
+                // Set an object to hold document elements we care about
+                ui = {
+                    heading: null,
+                    prompt: null, 
+                    input: null, 
+                    low: null,
+                    mid: null,
+                    hight: null
+                };
+                for(let id in ui) ui[id] = document.getElementById(id);
+                ui.input.onchange = handleGuess;
+
+                state = {
+                    n: Math.floor(99 * Math.random()+ 1),
+                    low: 0,
+                    hight: 100,
+                    guessnum: 0,
+                    guess: undefined
+                };
+                // Modify document content to display this initial state
+                display(state);
+                if(playagain === true)
+                save(state);
+            }
+
+            function save(state){
+                if(!history.pushState) return;
+                let url = "#guess" + state.guessnum;
+                history.pushState(state, "", url);
+            }
+            function popState(event){
+                if(event.state){
+                    state = event.state;
+                    display(state);
+                }    
+            else{
+                history.replaceState(state, "", "#guess" + state.guessnum);
+            }
+        };
+
+        function handleGuess(){
+            let g = parseInt(this.value);
+            if((g > state.low) && (g < state.hight)){
+                if(g < state.n)  state.hight = g;
+                state.guess = g;
+                state.guessnum++;
+                save(state);
+                display(state);
+            }
+            else{
+                alert("Please enter a number greater than " + state.low +
+                " and less then " + state.hight);
+            }
+        }
+
+        function display(state){
+            ui.heading.innerHTML = document.title = "I'm thinking of a number between " + 
+            state.low + " and " + state.hight + ".";
+            ui.low.style.width = state.low + "%";
+            ui.mid.style.width = (state.hight-state.low) + "%";
+            ui.hight.style.width = (100-state.hight) + "%";
+            // Make sure the input field is visible, empty and focused
+            ui.input.style.visibility = "visible";
+            ui.input.value = "";
+            ui.input.focus();
+
+            // Set the prompt based on the user's most recent guess
+            if(state.guess === undefined)
+                ui.prompt.innerHTML = "Type your guess and hit Enter:";
+            else if (state.guess < state.n)
+                ui.prompt.innerHTML = state.guess + " is too low. Guess again: ";
+            else if (state.guess > state.n)
+                ui.prompt.innerHTML = state.guess + " is too hight. Guess again: ";
+            else{
+                // When correctly, hide the input field and show a Play Again button.
+                ui.input.style.visibility = "hidden";
+                ui.heading.innerHTML = document.title = state.guess + " is correct! ";
+                ui.prompt.innerHTML = "You Win! <button onclick='newgame(true)'> Play Again</button>";
+            }
+        }
+        </script>
+        <style>
+            #prompt {font-size: 16px;}
+            table{
+                width: 90%; margin: 10px; margin-left: 5%;
+            }
+            #low, #hight{
+                background-color: lightgray; height: 1em;
+            }
+            #mid{
+                background-color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id = "heading">Hey! I'm thinking of number...</h1>
+        <table>
+            <tr>
+                <td id="low"></td>
+                <td id="mid"></td>
+                <td id="hight"></td>
+            </table>
+        <label id="prompt"></label><input id="input" type="text">
+    </body>
+</html>

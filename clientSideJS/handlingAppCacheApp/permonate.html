@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html manifest="permonate.appcache">
+    <head>
+        <title>PermaNote Editor</title>
+        <script src="permonate.js"></script>
+        <style>
+            #edotor {
+                width: 100%;
+                height: 250px;
+            }
+            #statusline{
+                width: 100%;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toolbar">
+            <button id="savebutton">Save</button>
+            <button onclick="sync()">Sync Note</button>
+            <button onclick="applicationCache.update()">Update Application</button>
+        </div>
+        <textarea id="editor"></textarea>
+        <div id="statusline"></div>
+    </body>
+</html>

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Zipcode Database</title>
+        <script>
+            let indexedDB = window.indexedDB || 
+            window.mozIndexedDB || window.webkitIndexedDB;
+            let IDBTransaction = window.IDBTransaction  || window.webkitIDBKeyRange;
+            function logerr(e){
+                console.log("IndexedDB error" + e.code + ":" + e.message);
+            }
+
+            function withDB(f){
+                let requst = indexedDB.open("zipcodes");
+                requst.onerror = logger;
+                requst.onsuccess = function(){
+                    let db = requst.result;
+                    if(db.version === "1") f(db);
+                    else initdb(db, f);
+                }
+            }
+            function lookupCity(zip, callback){
+                withDB(function(db){
+                    let transaction = db.transaction(["zipcodes"], IDBTransaction.READ_ONLY, 0);
+                    let objects = transaction.objectStore("zipcodes");
+                    let requst = objects.get(zip);
+                    requst.onerror = logger;
+                    requst.onsuccess = function(){
+                        let object = requst.result;
+                        if(object)
+                        callback(object.city + ", " + object.state);
+                        else 
+                        callback("Unknown zip code");
+                    }
+                })
+            };
+
+            function lookupZipcode(city, callback){
+                withDB(function(db){
+                    let transaction = db.transaction(["zipcodes", IDBTransaction.READ_ONLY, 0]);
+                    let store = transaction.objectStore("zipcodes");
+                    let index = store.index("cities");
+                    let range = new IDBKeyRange.only(city);
+
+                    let request = index.openCursor(range);
+                    requst.onerror = logger;
+                    request.onsuccess = function(){
+                        let cursor = request.result;
+                        if(!cursor) return;
+                        let object = cursor.value;
+                        callback(object);
+                        cursor.continue();
+                    }
+                })
+            }
+
+            function displayCity(zip){
+                lookupCity(zip, function(s){
+                    document.getElementById('city').value = s;
+                });
+            }
+
+            function displayZipcode(city){
+                let output = document.getElementById("zipcode");
+                output.innerHTML = "Matching zipcodes:";
+                lookupZipcodes(city, function(o){
+                    let div = document.createElement("div");
+                    let text = o.zipcode + ": " + o.city + ", " + o.state;
+                    div.appendChild(document.createTextNode(text));
+                    output.appendChild(div);
+                })
+            }
+
+            function initdb(db, f){
+                let statusline = document.createElement("div");
+                statusline.style.cssText = "position:fixed; left: 0px; top: 0px; width: 100%" + 
+                "color:white; background-color: black; font: bold 18pt sans-serif; " +
+                "padding: 10px; ";
+                document.body.appendChild(statusline);
+                function status(msg){
+                    statusline.innerHTML = msg.toString();
+                }
+                status("Initializing zipcode database.");
+
+                let request = db.setVersion("1");
+                request.onerror = status;
+                request.onsuccess = function(){
+                    let store = db.createObjectStore("zipcodes", {
+                        keyPath: "zipcode"
+                    });
+                store.createIndex("cities", "city");
+                
+            let xht = new XMLHttpRequest();
+            xhr.open("GET", "zipcodes.csv");
+            xhr.send();
+            xhr.onerror = status;
+            let lastChar = 0; numlines = 0;
+
+            xhr.onprogress = xhr.onload = function(e){
+                let lastNewline = xhr.responseText.lastIndexOf("\n");
+                if(lastNewLine > lastChar){
+                    let chunk = xhr.responseText.substring(lastChar, lastNewline)
+                    lastChar = lastNewLine + 1;
+
+                    let lines = chunk.split("\n");
+                    numlines += lines.length;
+
+                    let transaction = db.transaction(["zipcodes"], IDBTransaction.READ_WRITE);
+
+                    let store = transaction.objectStore("zipcodes");
+                    for(let i = 0; i < lines.length; i ++){
+                        let fields = lines[i].split(",");
+                        let record = {
+                            zipcode: fields[0],
+                            city: fields[1],
+                            state: fields[2],
+                            latitude: fields[3],
+                            longitude: fields[4]
+                        };
+                        store.put(record);
+                    }
+                    status("Initializing zipcode database: loaded "
+                    + numlines + " recors.");
+
+                }
+                if(e.type == "load"){
+                    lookupCity("02134", function(s){
+                        document.body.removeChild(statusline);
+                        withDB(f);
+                    });
+                }
+            }
+                }
+            }
+            </script>
+    </head>
+    <body>
+        <p>Enter a zip code to find its city:</p>
+        Zipcode: <input onchange="displayCity(this.value)"></input>
+        City: <output id="city"></output>
+    </div>
+    <div>
+        <p>Enter city name (case sensitive, without state) to find cities and their zipcodes:</p>
+        City: <input onchange="displayZipcodes(this.value)"></input>
+        <div id="zipcodes"></div>
+    </div>
+    <p><i>This example is only known to work in Firefox 4 and Chrome 11.</i></p>
+    <p><i>Your first query may take a very long time to complete.</i></p>
+    <p><i>You may need to start Chrome with --unlimited-quota-for-indexeddb</i></p>
+    </body>
+</html>
